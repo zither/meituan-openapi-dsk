@@ -10,29 +10,6 @@
   4. 使用sdk提供的接口进行开发调试
   5. 上线前将Config中$sandbox值设为false以及填入正式环境的key和secret
  
-
-### 安装
-
-
-// START 加载有命名空间的类
-spl_autoload_register(function($className){
-    // 命名空间前缀对应一个目录，便于自动加载其中的类, psr-4规则
-    $namespaceMapping = [
-        'MeituanOpenApi\\' => APPPATH . 'third_party/meituan/src/MeituanOpenApi/',
-    ];
-
-    foreach ($namespaceMapping as $prefix => $path) {
-        $prefixLength = strlen($prefix);
-        if (substr($className, 0, $prefixLength) == $prefix) {
-            $classFile = $path . substr($className, $prefixLength).'.php';
-            $classFile = str_replace('\\', '/', $classFile);
-            require_once $classFile;
-            return ;
-        }
-    }
-});
-
-
 ### 基本用法
 
 ```php
