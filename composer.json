@@ -1,0 +1,23 @@
+{
+  "name": "ysoar/meituan-openapi",
+  "description": "meituan-openapi-php",
+  "license": "master",
+  "keywords": [
+    "meituan"
+  ],
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "ysoar",
+      "email": "ytf2528621@163.com"
+    }
+  ],
+  "require": {
+      "php": ">=5.4.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "MeituanOpenApi\\": "src/MeituanOpenApi"
+    }
+  }
+}
