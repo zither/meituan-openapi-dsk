@@ -91,9 +91,8 @@ class OAuthClient
     private function get_headers()
     {
         return array(
-            "Authorization: Basic " . base64_encode(urlencode($this->client_id) . ":" . urlencode($this->secret)),
             "Content-Type: application/x-www-form-urlencoded; charset=utf-8",
-            "Accept-Encoding: gzip");
+        );
     }
 
     private function request($body)

@@ -34,13 +34,15 @@ class RpcClient
     }
 
     /** call server api with nop
+     * @param $method
      * @param $action
+     * @param array $parameters
      * @param array $parameters
      * @return mixed
      * @throws BusinessException
      * @throws Exception
      */
-    public function call($action, array $parameters)
+    public function call($method, $action, array $parameters, $header = [])
     {
         //url
         $url = $this->api_request_url . $action;
@@ -57,23 +59,30 @@ class RpcClient
         $protocol = array_merge($protocol, $parameters);
 
         //签名sign
-        $protocol['sign'] = $this->generate_signature($protocol);
+        $protocol['sign'] = $this->generateSignature($protocol);
 
-        $result = $this->post($url, $protocol);
+        if ($method == 'get') { //get
+            $result = $this->get($url, $protocol, $header);
+        } else { //post
+            $result = $this->post($url, $protocol, $header);
+        } 
+
         $response = json_decode($result, false, 512, JSON_BIGINT_AS_STRING);
         if (is_null($response)) {
             throw new Exception("invalid response.");
         }
 
-        if (isset($response->code) && isset($response->msg)) {
-            throw new BusinessException($response->code.' : '.$response->msg);
+        //抛出错误信息
+        if ($response->code != 0) {
+            if (isset($response->error_type) && isset($response->message)) {
+                throw new BusinessException($response->error_type.' : '.$response->message);
+            }
         }
-
         return $response->data;
     }
 
 
-    private function generate_signature($protocol)
+    private function generateSignature($protocol)
     {
         //键值字典排序
         ksort($protocol);
@@ -91,17 +100,21 @@ class RpcClient
     }
 
 
-    private function post($url, $data)
+
+    private function get($url, $data, $header)
     {
         $log = $this->log;
         if ($log != null) {
             $log->info("request data: " . json_encode($data));
         }
 
+        //头部设置    
+        $header = !empty($header) ? $header : array("Content-type: x-www-form-urlencoded");
+
         $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POST, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-type: x-www-form-urlencoded"));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
@@ -119,12 +132,6 @@ class RpcClient
             $log->info("response: " . $response);
         }
 
-        // //状态码
-        // $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // if ($status_code != 0) {
-
-        // }    
-
         //关闭cURL资源，并且释放系统资源
         curl_close($ch);
 
@@ -132,49 +139,42 @@ class RpcClient
     }
 
 
-    function meituanCurlData($url, $params = [])
-{
-    // 创建一个cURL资源
-    $ch = curl_init();
 
-    // 设置URL和相应的选项
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HEADER, 0);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    private function post($url, $data, $header)
+    {
+        $log = $this->log;
+        if ($log != null) {
+            $log->info("request data: " . json_encode($data));
+        }
 
-    //判断是否是HTTPS请求
-    if (strlen($url) > 5 && strtolower(substr($url, 0, 5)) == "https") {
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    }
+        //头部设置    
+        $header = !empty($header) ? $header : array("Content-type: x-www-form-urlencoded");
 
-    if (!empty($params)) {
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+        $response = curl_exec($ch);
+
+        //错误信息    
+        if (curl_errno($ch)) {
+            if ($log != null) {
+                $log->error("error: " . curl_error($ch));
+            }
+            throw new Exception(curl_error($ch));
+        }
+
+        if ($log != null) {
+            $log->info("response: " . $response);
+        }
+
+        //关闭cURL资源，并且释放系统资源
+        curl_close($ch);
+
+        return $response;
     }
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-
-    // 抓取URL并把它传递给浏览器
-    $curlInfo = curl_exec($ch);
-
-    // 关闭cURL资源，并且释放系统资源
-    curl_close($ch);
-
-    return $curlInfo;
-}
-
-//生成签名
-function generateSign($params)
-{
-    $aliParams =[];
-    foreach ($params as $key => $val) {
-        $aliParams[] = $key . $val;
-    }
-
-    sort($aliParams);
-    $signStr =  meituan_getSecret() . join('', $aliParams);
-    return strtolower(sha1($signStr));
-}
-
 
 }
