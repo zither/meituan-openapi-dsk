@@ -8,313 +8,217 @@ namespace MeituanOpenApi\Api;
 class OrderService extends RpcService
 {
 
-    /** 获取订单
-     * @param $order_id 订单Id
+    /** 查询订单－根据订单Id（7.3.1）
+     * 通过订单ID主动查询订单明细，包括下单、菜品，配送，优惠、对账等信息。建议与7.5.1及7.5.4接口结合使用，以防系统漏单。   
+     * @param $orderId 订单Id
      * @return mixed
      */
-    public function get_order($order_id)
+    public function queryById($orderId)
     {
-        return $this->client->call("eleme.order.getOrder", array("orderId" => $order_id));
+        return $this->client->call('get', 'waimai/order/queryById', ['orderId' => $orderId]);
     }
 
-    /** 批量获取订单
-     * @param $order_ids 订单Id的列表
+
+    /** 查询订单－根据流水号（7.3.2）
+     * @param $ePoiId erp方门店Id 最大长度100
+     * @param $daySeq 门店下的订单流水号
+     * @param $date   日期【yyyyMMdd】
      * @return mixed
      */
-    public function mget_orders($order_ids)
+    public function queryByDaySeq($ePoiId, $daySeq, $date)
     {
-        return $this->client->call("eleme.order.mgetOrders", array("orderIds" => $order_ids));
+        return $this->client->call('get', 'waimai/order/queryByDaySeq', ['ePoiId' => $ePoiId, 'daySeq' => $daySeq, 'date' => $date]);
     }
 
-    /** 确认订单(推荐)
-     * @param $order_id 订单Id
+
+    /** 商家确认接单（7.3.3）
+     * 新订单推单后，需要调用此接口确认接单。
+     * @param $orderId 订单Id
      * @return mixed
      */
-    public function confirm_order_lite($order_id)
+    public function confirm($orderId)
     {
-        return $this->client->call("eleme.order.confirmOrderLite", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/confirm', ['orderId' => $orderId]);
     }
 
-    /** 确认订单
-     * @param $order_id 订单Id
+
+    /** 商家取消订单（7.3.4）
+     * @param $orderId    订单Id
+     * @param $reasonCode 取消原因码 参考备注信息
+     * @param $reason     取消原因
      * @return mixed
      */
-    public function confirm_order($order_id)
+    public function cancel($orderId, $reasonCode, $reason)
     {
-        return $this->client->call("eleme.order.confirmOrder", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/cancel', ['orderId' => $orderId, 'reasonCode' => $reasonCode, 'reason' => $reason]);
     }
 
-    /** 取消订单(推荐)
-     * @param $order_id 订单Id
-     * @param $type 取消原因
-     * @param $remark 备注说明
+
+    /** 自配送－配送状态（7.3.5）
+     * 配送方式是商家自配送时，需要调用此接口将配送信息同步到美团外卖。
+     * @param $orderId    订单Id
+     * @param $courierName 配送人名称
+     * @param $courierPhone     配送人电话
      * @return mixed
      */
-    public function cancel_order_lite($order_id, $type, $remark)
+    public function delivering($orderId, $courierName, $courierPhone)
     {
-        return $this->client->call("eleme.order.cancelOrderLite", array("orderId" => $order_id, "type" => $type, "remark" => $remark));
+        return $this->client->call('post', 'waimai/order/delivering', ['orderId' => $orderId, 'courierName' => $courierName, 'courierPhone' => $courierPhone]);
     }
 
-    /** 取消订单
-     * @param $order_id 订单Id
-     * @param $type 取消原因
-     * @param $remark 备注说明
+
+    /** 自配送场景－订单已送达（7.3.6）
+     * 配送方式是商家自配送时，需要调用此接口将配送信息同步到美团外卖。
+     * @param $orderId    订单Id
      * @return mixed
      */
-    public function cancel_order($order_id, $type, $remark)
+    public function delivered($orderId)
     {
-        return $this->client->call("eleme.order.cancelOrder", array("orderId" => $order_id, "type" => $type, "remark" => $remark));
+        return $this->client->call('post', 'waimai/order/delivered', ['orderId' => $orderId]);
     }
 
-    /** 同意退单/同意取消单(推荐)
-     * @param $order_id 订单Id
+
+    /** 众包配送场景－查询配送费(7.3.7)
+     * 众包配送下单前，先调用该接口查看当前配送费
+     * @param $orderIds  订单Ids (多个订单号逗号隔开)
      * @return mixed
      */
-    public function agree_refund_lite($order_id)
+    public function queryCrowdsourcingShippingFee($orderIds)
     {
-        return $this->client->call("eleme.order.agreeRefundLite", array("orderId" => $order_id));
+        return $this->client->call('get', 'waimai/order/queryZbShippingFee', ['orderIds' => $orderIds]);
     }
 
-    /** 同意退单/同意取消单
-     * @param $order_id 订单Id
+
+    /** 众包配送场景－预下单(7.3.8)
+     * 此接口仅用于众包配送场景下的预下单。
+     *  -如预下单时配送费与查询时配送费一致，直接发起众包配送。
+     *  -如配送费有变化需增加配送费并调用7.3.7接口再次发起众包配送。
+     * @param $orderId     订单Id
+     * @param $shippingFee 配送费，查询接口返回的配送费
+     * @param $tipAmount   小费，不加小费输入0.0
      * @return mixed
      */
-    public function agree_refund($order_id)
+    public function prepareCrowdsourcingDispatch($orderId, $shippingFee, $tipAmount)
     {
-        return $this->client->call("eleme.order.agreeRefund", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/prepareZbDispatch', ['orderId' => $orderId, 'shippingFee' => $shippingFee, 'tipAmount' => $tipAmount]);
     }
 
-    /** 不同意退单/不同意取消单(推荐)
-     * @param $order_id 订单Id
-     * @param $reason 商家不同意退单原因
+
+    /** 众包配送场景－配送单加小费(7.3.9)
+     * 从发配送到骑手抢单前，这段时间都可以追加小费，可多次调用，小费只能增，不能减。
+     * @param $orderId     订单Id
+     * @param $tipAmount   小费
      * @return mixed
      */
-    public function disagree_refund_lite($order_id, $reason)
+    public function updateCrowdsourcingDispatchTip($orderId, $tipAmount)
     {
-        return $this->client->call("eleme.order.disagreeRefundLite", array("orderId" => $order_id, "reason" => $reason));
+        return $this->client->call('post', 'waimai/order/updateZbDispatchTip', ['orderId' => $orderId, 'tipAmount' => $tipAmount]);
     }
 
-    /** 不同意退单/不同意取消单
-     * @param $order_id 订单Id
-     * @param $reason 商家不同意退单原因
+
+    /** 众包配送场景－确认下单(7.3.10)
+     * 预下单失败后，再调用确认下单接口。
+     * @param $orderId     订单Id
+     * @param $tipAmount   小费，不加小费输入0.0
      * @return mixed
      */
-    public function disagree_refund($order_id, $reason)
+    public function confirmCrowdsourcingDispatchTip($orderId, $tipAmount)
     {
-        return $this->client->call("eleme.order.disagreeRefund", array("orderId" => $order_id, "reason" => $reason));
+        return $this->client->call('post', 'waimai/order/confirmZbDispatch', ['orderId' => $orderId, 'tipAmount' => $tipAmount]);
     }
 
-    /** 获取订单配送记录
-     * @param $order_id 订单Id
+
+    /** 美团专送场景－发配送(7.3.11)
+     * @param $orderId     订单Id
      * @return mixed
      */
-    public function get_delivery_state_record($order_id)
+    public function dispatchShip($orderId)
     {
-        return $this->client->call("eleme.order.getDeliveryStateRecord", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/dispatchShip', ['orderId' => $orderId]);
     }
 
-    /** 批量获取订单最新配送记录
-     * @param $order_ids 订单Id列表
+
+    /** 取消美团配送（除自配送场景）(7.3.12)
+     * 此接口主要应用众包配送方式，送达之前都可以取消，其它美团配送方式，只能15分钟后无骑手接单情况下取消。
+     * @param $orderId     订单Id
      * @return mixed
      */
-    public function batch_get_delivery_states($order_ids)
+    public function cancelDispatch($orderId)
     {
-        return $this->client->call("eleme.order.batchGetDeliveryStates", array("orderIds" => $order_ids));
+        return $this->client->call('post', 'waimai/order/cancelDispatch', ['orderId' => $orderId]);
     }
 
-    /** 配送异常或者物流拒单后选择自行配送(推荐)
-     * @param $order_id 订单Id
+
+    /** 订单同意退款(7.3.13)
+     * 同意用户发起的退款申请
+     * @param $orderId    订单Id
+     * @param $reason     原因
      * @return mixed
      */
-    public function delivery_by_self_lite($order_id)
+    public function agreeRefund($orderId)
     {
-        return $this->client->call("eleme.order.deliveryBySelfLite", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/agreeRefund', ['orderId' => $orderId, 'reason'=>$reason]);
     }
 
-    /** 配送异常或者物流拒单后选择自行配送
-     * @param $order_id 订单Id
+
+    /** 订单拒绝退款(7.3.14)
+     * 用户申请退款被商家第一次拒绝后，不能直接进行退款申诉，需联系美团客服后由客服裁决
+     * @param $orderId    订单Id
+     * @param $reason     原因
      * @return mixed
      */
-    public function delivery_by_self($order_id)
+    public function rejectRefund($orderId)
     {
-        return $this->client->call("eleme.order.deliveryBySelf", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/rejectRefund', ['orderId' => $orderId, 'reason'=>$reason]);
     }
 
-    /** 配送异常或者物流拒单后选择不再配送(推荐)
-     * @param $order_id 订单Id
+
+    /** 根据门店id, 批量查询待确认订单号列表(7.3.15)
+     * 查询5分钟内未确认的订单号列表，已经推送成功的订单号不再返回，一次传入查询的门店不可超过10个
+     * @param $epoiIds   商家门店号集合,中间用逗号隔开
      * @return mixed
      */
-    public function no_more_delivery_lite($order_id)
+    public function queryByEpoids($epoiIds)
     {
-        return $this->client->call("eleme.order.noMoreDeliveryLite", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/queryByEpoids', ['epoiIds' => $epoiIds]);
     }
 
-    /** 配送异常或者物流拒单后选择不再配送
-     * @param $order_id 订单Id
-     * @return mixed
+
+    /** 根据开发者id, 批量查询待确认订单号列表(7.3.16)
+     * 查询近5分钟内未被商家确认的有效订单号列表，可多次拉取，一次拉取最多100单（按时间升序）
+     * @param $developerId   开发者id
+     * @param $maxOffsetId   上次拉取新单列表中最大的offserId，初始值可以为0
+     * @param $size          每次拉取多少条，范围为1-100
+     * @return mixed   
      */
-    public function no_more_delivery($order_id)
+    public function queryNewOrdersByDevId($developerId, $maxOffsetId, $size)
     {
-        return $this->client->call("eleme.order.noMoreDelivery", array("orderId" => $order_id));
+        return $this->client->call('get', 'waimai/order/queryNewOrdersByDevId', ['developerId' => $developerId, 'maxOffsetId'=>$maxOffsetId, 'size'=>$size]);
     }
 
-    /** 订单确认送达(推荐)
-     * @param $order_id 订单ID
-     * @return mixed
+
+    /** 部分退款-查询部分退款商品(7.3.17)
+     * 订单完成后，在商家发起部分退款前，查询可被部分退款的商品详情
+     * @param $orderId   订单Id
+     * @return mixed   
      */
-    public function received_order_lite($order_id)
+    public function queryPartRefundFoods($orderId)
     {
-        return $this->client->call("eleme.order.receivedOrderLite", array("orderId" => $order_id));
+        return $this->client->call('get', 'waimai/order/queryPartRefundFoods', ['orderId' => $orderId]);
     }
 
-    /** 订单确认送达
-     * @param $order_id 订单ID
-     * @return mixed
+
+    /** 部分退款-申请部分退款(7.3.18)
+     * 订单完成后，可以调用此接口发起部分退款
+     * @param $orderId   订单Id
+     * @param $reason   申请部分退款的具体原因
+     * @param $foodData   部分退款菜品详情 (没有sku，sku_id为空字符串"" ,count不能为0)
+     * @return mixed   
      */
-    public function received_order($order_id)
+    public function applyPartRefund($orderId, $reason, $foodData)
     {
-        return $this->client->call("eleme.order.receivedOrder", array("orderId" => $order_id));
+        return $this->client->call('post', 'waimai/order/applyPartRefund', ['orderId' => $orderId, 'reason' => $reason, 'foodData' => $foodData]);
     }
 
-    /** 回复催单
-     * @param $remind_id 催单Id
-     * @param $type 回复类别
-     * @param $content 回复内容,如果type为custom,content必填,回复内容不能超过30个字符
-     * @return mixed
-     */
-    public function reply_reminder($remind_id, $type, $content)
-    {
-        return $this->client->call("eleme.order.replyReminder", array("remindId" => $remind_id, "type" => $type, "content" => $content));
-    }
-
-    /** 获取指定订单菜品活动价格.
-     * @param $order_id 订单Id
-     * @return mixed
-     */
-    public function get_commodities($order_id)
-    {
-        return $this->client->call("eleme.order.getCommodities", array("orderId" => $order_id));
-    }
-
-    /** 批量获取订单菜品活动价格
-     * @param $order_ids 订单Id列表
-     * @return mixed
-     */
-    public function mget_commodities($order_ids)
-    {
-        return $this->client->call("eleme.order.mgetCommodities", array("orderIds" => $order_ids));
-    }
-
-    /** 获取订单退款信息
-     * @param $order_id 订单Id
-     * @return mixed
-     */
-    public function get_refund_order($order_id)
-    {
-        return $this->client->call("eleme.order.getRefundOrder", array("orderId" => $order_id));
-    }
-
-    /** 批量获取订单退款信息
-     * @param $order_ids 订单Id列表
-     * @return mixed
-     */
-    public function mget_refund_orders($order_ids)
-    {
-        return $this->client->call("eleme.order.mgetRefundOrders", array("orderIds" => $order_ids));
-    }
-
-    /** 取消呼叫配送
-     * @param $order_id 订单Id
-     * @return mixed
-     */
-    public function cancel_delivery($order_id)
-    {
-        return $this->client->call("eleme.order.cancelDelivery", array("orderId" => $order_id));
-    }
-
-    /** 呼叫配送
-     * @param $order_id 订单Id
-     * @param $fee 小费,1-8之间的整数
-     * @return mixed
-     */
-    public function call_delivery($order_id, $fee)
-    {
-        return $this->client->call("eleme.order.callDelivery", array("orderId" => $order_id, "fee" => $fee));
-    }
-
-    /** 获取店铺未回复的催单
-     * @param $shop_id 店铺id
-     * @return mixed
-     */
-    public function get_unreply_reminders($shop_id)
-    {
-        return $this->client->call("eleme.order.getUnreplyReminders", array("shopId" => $shop_id));
-    }
-
-    /** 查询店铺未处理订单
-     * @param $shop_id 店铺id
-     * @return mixed
-     */
-    public function get_unprocess_orders($shop_id)
-    {
-        return $this->client->call("eleme.order.getUnprocessOrders", array("shopId" => $shop_id));
-    }
-
-    /** 查询店铺未处理的取消单
-     * @param $shop_id 店铺id
-     * @return mixed
-     */
-    public function get_cancel_orders($shop_id)
-    {
-        return $this->client->call("eleme.order.getCancelOrders", array("shopId" => $shop_id));
-    }
-
-    /** 查询店铺未处理的退单
-     * @param $shop_id 店铺id
-     * @return mixed
-     */
-    public function get_refund_orders($shop_id)
-    {
-        return $this->client->call("eleme.order.getRefundOrders", array("shopId" => $shop_id));
-    }
-
-    /** 查询全部订单
-     * @param $shop_id 店铺id
-     * @param $page_no 页码。取值范围:大于零的整数最大限制为100
-     * @param $page_size 每页获取条数。最小值1，最大值50。
-     * @param $date 日期,默认当天,格式:yyyy-MM-dd
-     * @return mixed
-     */
-    public function get_all_orders($shop_id, $page_no, $page_size, $date)
-    {
-        return $this->client->call("eleme.order.getAllOrders", array("shopId" => $shop_id, "pageNo" => $page_no, "pageSize" => $page_size, "date" => $date));
-    }
-
-    /** 批量查询订单是否支持索赔
-     * @param $order_ids 索赔订单Id的列表
-     * @return mixed
-     */
-    public function query_supported_compensation_orders($order_ids)
-    {
-        return $this->client->call("eleme.order.querySupportedCompensationOrders", array("orderIds" => $order_ids));
-    }
-
-    /** 批量申请索赔
-     * @param $requests 索赔请求的列表
-     * @return mixed
-     */
-    public function batch_apply_compensations($requests)
-    {
-        return $this->client->call("eleme.order.batchApplyCompensations", array("requests" => $requests));
-    }
-
-    /** 批量查询索赔结果
-     * @param $order_ids 索赔订单Id的列表
-     * @return mixed
-     */
-    public function query_compensation_orders($order_ids)
-    {
-        return $this->client->call("eleme.order.queryCompensationOrders", array("orderIds" => $order_ids));
-    }
 
 }

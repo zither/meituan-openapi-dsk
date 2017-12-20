@@ -12,18 +12,10 @@ class UserService extends RpcService
     
      * @return mixed
      */
-    public function get_user()
+    public function getUser()
     {
-        return $this->client->call("eleme.user.getUser", array());
+        return null;
     }
 
-    /** 获取当前授权账号的手机号,特权接口仅部分帐号可以调用
-    
-     * @return mixed
-     */
-    public function get_phone_number()
-    {
-        return $this->client->call("eleme.user.getPhoneNumber", array());
-    }
 
 }

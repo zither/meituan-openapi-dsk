@@ -8,53 +8,84 @@ namespace MeituanOpenApi\Api;
 class ShopService extends RpcService
 {
 
-    /** 查询店铺信息
-     * @param $shop_id 店铺Id
+    /** 门店置营业
+     * 设置门店营业，门店营业后用户才可以下单。通过appAuthToken定位到要操作的门店。
      * @return mixed
      */
-    public function get_shop($shop_id)
+    public function open()
     {
-        return $this->client->call("eleme.shop.getShop", array("shopId" => $shop_id));
+        return $this->client->call('post','waimai/poi/open', []);
     }
 
-    /** 更新店铺基本信息
-     * @param $shop_id 店铺Id
-     * @param $properties 店铺属性
+
+    /** 门店置休息
+     * 设置门店状态为休息中。通过appAuthToken定位到要操作的门店。
      * @return mixed
      */
-    public function update_shop($shop_id, $properties)
+    public function close()
     {
-        return $this->client->call("eleme.shop.updateShop", array("shopId" => $shop_id, "properties" => $properties));
+        return $this->client->call('post','waimai/poi/close', []);
     }
 
-    /** 批量获取店铺简要
-     * @param $shop_ids 店铺Id的列表
+
+    /** 修改门店营业时间
+     * @param $openTime
      * @return mixed
      */
-    public function mget_shop_status($shop_ids)
+    public function updateOpenTime($openTime)
     {
-        return $this->client->call("eleme.shop.mgetShopStatus", array("shopIds" => $shop_ids));
+        return $this->client->call('post','waimai/poi/updateOpenTime', ['openTime' => $openTime]);
     }
 
-    /** 设置送达时间
-     * @param $shop_id 店铺Id
-     * @param $delivery_basic_mins 配送基准时间(单位分钟)
-     * @param $delivery_adjust_mins 配送调整时间(单位分钟)
+
+    /** 查询门店信息
+     * @param $ePoiIds 门店Ids
      * @return mixed
      */
-    public function set_delivery_time($shop_id, $delivery_basic_mins, $delivery_adjust_mins)
+    public function queryPoiInfo($ePoiIds)
     {
-        return $this->client->call("eleme.shop.setDeliveryTime", array("shopId" => $shop_id, "deliveryBasicMins" => $delivery_basic_mins, "deliveryAdjustMins" => $delivery_adjust_mins));
+        return $this->client->call('get','waimai/poi/queryPoiInfo', ['ePoiIds' => $ePoiIds]);
     }
 
-    /** 设置是否支持在线退单
-     * @param $shop_id 店铺Id
-     * @param $enable 是否支持
+
+    /** 查询门店评价信息
+     * @param $ePoiIds 门店Ids
+     * @param $startTime 
+     * @param $endTime 
+     * @param $offset 
+     * @param $limit 
      * @return mixed
      */
-    public function set_online_refund($shop_id, $enable)
+    public function queryReviewList($ePoiIds, $startTime, $endTime, $offset, $limit)
     {
-        return $this->client->call("eleme.shop.setOnlineRefund", array("shopId" => $shop_id, "enable" => $enable));
+        return $this->client->call('get', 'waimai/poi/queryReviewList', [
+                'ePoiId' => $ePoiId,
+                'startTime' => $startTime,
+                'endTime' => $endTime,
+                'offset' => $offset,
+                'limit' => $limit
+            ]);
+    }
+
+
+    /** 查询门店是否延迟发配送
+     * 延迟发配送只针对美团配送的 自建、代理两种配送方式
+     * @return mixed
+     */
+    public function queryDelayDispatch()
+    {
+        return $this->client->call('get','waimai/poi/queryDelayDispatch', []);
+    }
+
+
+    /** 设置延迟发配送时间
+     * 如果门店在延迟发配送名单内，才能设置延迟时间。延迟配送的前提必须是自建配送或者代理配送，且需要由美团的销售人员另外申请才可以使用该功能。
+     * @param $delaySeconds
+     * @return mixed
+     */
+    public function updateDelayDispatch($delaySeconds)
+    {
+        return $this->client->call('post','waimai/poi/updateDelayDispatch', ['delaySeconds' => $delaySeconds]);
     }
 
 }
