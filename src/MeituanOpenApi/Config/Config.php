@@ -6,8 +6,9 @@ use InvalidArgumentException;
 
 class Config
 {
-    private $app_key;
-    private $app_secret;
+    private $developer_id;   //	开发者ID
+    private $business_id;    //	1: 接入团购&闪惠业务 2: 接入外卖业务
+    private $signKey;
     private $sandbox;
 
     private $request_url;
@@ -20,7 +21,7 @@ class Config
     // private $default_request_url = "http://waimaiopen.meituan.com";
     // private $default_sandbox_request_url = "http://test.waimaiopen.meituan.com";
 
-    public function __construct($app_key, $app_secret, $sandbox)
+    public function __construct($developer_id, $business_id, $sign_key, $sandbox)
     {
         if ($sandbox == false) {
             $this->request_url = $this->default_request_url;
@@ -30,28 +31,50 @@ class Config
             throw new InvalidArgumentException("the type of sandbox should be a boolean");
         }
 
-        if ($app_key == null || $app_key == "") {
-            throw new InvalidArgumentException("app_key is required");
+        if (empty($developer_id)) {
+            throw new InvalidArgumentException("developer_id is required");
         }
 
-        if ($app_secret == null || $app_secret == "") {
-            throw new InvalidArgumentException("app_secret is required");
+        if (empty($business_id)) {
+            throw new InvalidArgumentException("business_id is required");
         }
 
-        $this->app_key = $app_key;
-        $this->app_secret = $app_secret;
+        if (empty($sign_key)) {
+            throw new InvalidArgumentException("sign_key is required");
+        }
+
+        $this->developer_id = $developer_id;
+        $this->business_id = $business_id;
+        $this->signKey = $sign_key;
         $this->sandbox = $sandbox;
     }
 
-    public function get_app_key()
+
+    /**
+     * 获取开发者ID
+     * @return mixed
+     */
+    public function developerId()
     {
-        return $this->app_key;
+        return $this->developer_id;
     }
 
-    public function get_app_secret()
+
+    /**
+     * 获取业务类型
+     * @return mixed
+     */
+    public function businessId()
     {
-        return $this->app_secret;
+        return $this->business_id;
     }
+
+
+    public function getSignKey()
+    {
+        return $this->signKey;
+    }
+
 
     public function get_request_url()
     {

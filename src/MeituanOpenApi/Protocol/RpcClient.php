@@ -4,46 +4,57 @@ namespace MeituanOpenApi\Protocol;
 
 use MeituanOpenApi\Config\Config;
 use MeituanOpenApi\Exception\BusinessException;
-use MeituanOpenApi\Exception\ExceedLimitException;
-use MeituanOpenApi\Exception\IllegalRequestException;
-use MeituanOpenApi\Exception\InvalidSignatureException;
-use MeituanOpenApi\Exception\InvalidTimestampException;
-use MeituanOpenApi\Exception\PermissionDeniedException;
-use MeituanOpenApi\Exception\ServerErrorException;
-use MeituanOpenApi\Exception\UnauthorizedException;
-use MeituanOpenApi\Exception\ValidationFailedException;
 use Exception;
 
 class RpcClient
 {
 
-    private $app_key;
-    private $app_secret;
+    private $signKey;
     private $api_request_url;
     private $token;
     private $log;
 
     public function __construct($token, Config $config)
     {
-        $this->app_key = $config->get_app_key();
-        $this->app_secret = $config->get_app_secret();
+        $this->signKey = $config->getSignKey();
         $this->api_request_url = $config->get_request_url();
         // $this->api_request_url = $config->get_request_url() . "/api/v1";
         $this->log = $config->get_log();
         $this->token = $token;
     }
 
+
+    /**
+     * 获取app_key
+     * @return mixed
+     */
+    public function getSignKey()
+    {
+        return $this->signKey;
+    }
+
+
+    /**
+     * 获取token
+     * @return mixed
+     */
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+
     /** call server api with nop
      * @param $method
      * @param $action
      * @param array $parameters
      * @param array $header
-     * @param $is_merge  
+     * @param $is_merge
      * @return mixed
      * @throws BusinessException
      * @throws Exception
      */
-    public function call($method, $action, $parameters, $header = [], $is_merge = true)
+    public function call($method, $action, $parameters = [], $header = [], $is_merge = true)
     {
         //url
         $url = $this->api_request_url . $action;
@@ -59,7 +70,7 @@ class RpcClient
         //是否合并应用参数
         if ($is_merge) {
             $protocol = array_merge($protocol, $parameters);
-        } 
+        }
 
         //签名sign
         $protocol['sign'] = $this->generateSignature($protocol);
@@ -68,7 +79,7 @@ class RpcClient
             $result = $this->get($url, $protocol, $header);
         } else { //post
             $result = $this->post($url, $protocol, $header);
-        } 
+        }
 
         $response = json_decode($result, false, 512, JSON_BIGINT_AS_STRING);
         if (is_null($response)) {
@@ -78,7 +89,7 @@ class RpcClient
         //抛出错误信息
         if ($response->code != 0) {
             if (isset($response->error_type) && isset($response->message)) {
-                throw new BusinessException($response->error_type.' : '.$response->message);
+                throw new BusinessException($response->error_type . ' : ' . $response->message);
             }
         }
         return $response->data;
@@ -94,17 +105,16 @@ class RpcClient
         ksort($protocol);
 
         //拼接字符成字符串
-        $aliParams =[];
+        $aliParams = [];
         foreach ($protocol as $key => $value) {
             $value = is_array($value) ? json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : '';
             $aliParams[] = $key . $value;
         }
-        $signStr =  $this->app_secret . implode('', $aliParams);
+        $signStr = $this->signKey . implode('', $aliParams);
 
         //sha1处理，字符串小写开头
         return strtolower(sha1($signStr));
     }
-
 
 
     private function get($url, $data, $header)
@@ -143,7 +153,6 @@ class RpcClient
 
         return $response;
     }
-
 
 
     private function post($url, $data, $header)

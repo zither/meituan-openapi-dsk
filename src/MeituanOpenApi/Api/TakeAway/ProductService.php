@@ -13,16 +13,20 @@ class ProductService extends RpcService
 
     /**
      * 查询菜品分类
-     * $return mixed
+     * @return mixed
      */
     public function queryCateList()
     {
         return $this->client->call('get', 'waimai/dish/queryCatList');
     }
 
+
     /**
-     * 新增／更新菜品分类
-     * $return mixed
+     * 新增/更新菜品分类
+     * @param $oldCatName
+     * @param $catName
+     * @param $sequence
+     * @return mixed
      */
     public function addOrUpdCate($oldCatName, $catName, $sequence)
     {
@@ -32,25 +36,32 @@ class ProductService extends RpcService
 
     /**
      * 删除菜品分类
-     * $return mixed
+     * @param $catName
+     * @return mixed
      */
     public function delCate($catName)
     {
         return $this->client->call('post', 'waimai/dish/deleteCat', ['catName' => $catName]);
     }
 
+
     /**
      * 根据ERP的门店id查询门店下的菜品基础信息【包含美团的菜品Id】(7.2.2)
-     * $return mixed
+     * @param $ePoiId
+     * @return mixed
      */
     public function queryBaseListByEPoiId($ePoiId)
     {
         return $this->client->call('get', 'waimai/dish/queryBaseListByEPoiId', ['ePoiId' => $ePoiId]);
     }
 
+
     /**
      * 根据ERP的门店id查询门店下的菜品【不包含美团的菜品Id】(7.2.4)
-     * $return mixed
+     * @param $ePoiId
+     * @param $offset
+     * @param $limit
+     * @return mixed
      */
     public function queryListByEPoiId($ePoiId, $offset, $limit)
     {
@@ -66,8 +77,8 @@ class ProductService extends RpcService
     public function getDishMapUrl($ePoiId)
     {
         return self::DISH_MAP_API . '?' . http_build_query([
-                'signKey'      => $this->client->app_key,
-                'appAuthToken' => $this->client->token,
+                'signKey'      => $this->client->getSignKey(),
+                'appAuthToken' => $this->client->getToken(),
                 'ePoiId'       => $ePoiId,
             ]);
     }
@@ -75,7 +86,6 @@ class ProductService extends RpcService
 
     /**
      * 重定向至菜品映射链接 (7.2.3 重定向跳转)
-     *
      * @param $ePoiId
      */
     public function redirectDishMap($ePoiId)
@@ -86,7 +96,9 @@ class ProductService extends RpcService
 
     /**
      * 建立菜品映射(美团商品与本地erp商品映射关系) （7.2.3 openapi接入）
-     * $return mixed
+     * @param $ePoiId
+     * @param $dishMappings
+     * @return mixed
      */
     public function mapping($ePoiId, $dishMappings)
     {
@@ -96,7 +108,9 @@ class ProductService extends RpcService
 
     /**
      * 批量上传／更新菜品
-     * $return mixed
+     * @param $ePoiId
+     * @param $dishes
+     * @return mixed
      */
     public function batchUpload($ePoiId, $dishes)
     {
@@ -106,7 +120,9 @@ class ProductService extends RpcService
 
     /**
      * 更新菜品价格【sku的价格】
-     * $return mixed
+     * @param $ePoiId
+     * @param $dishSkuPrices
+     * @return mixed
      */
     public function updatePrice($ePoiId, $dishSkuPrices)
     {
@@ -116,7 +132,9 @@ class ProductService extends RpcService
 
     /**
      * 更新菜品库存【sku的库存】
-     * $return mixed
+     * @param $ePoiId
+     * @param $dishSkuStocks
+     * @return mixed
      */
     public function updateStock($ePoiId, $dishSkuStocks)
     {
@@ -126,7 +144,9 @@ class ProductService extends RpcService
 
     /**
      * 删除菜品
-     * $return mixed
+     * @param $ePoiId
+     * @param $eDishCode
+     * @return mixed
      */
     public function delete($ePoiId, $eDishCode)
     {
@@ -136,7 +156,9 @@ class ProductService extends RpcService
 
     /**
      * 删除菜品sku
-     * $return mixed
+     * @param $eDishCode
+     * @param $eDishSkuCode
+     * @return mixed
      */
     public function deleteSku($eDishCode, $eDishSkuCode)
     {
@@ -144,11 +166,11 @@ class ProductService extends RpcService
     }
 
 
-    /** 
+    /**
      * 上传菜品图片，返回图片id
      * @param $ePoiId erp商家id
      * @param $imageName 文件名
-     * @param $image 文件base64字节流
+     * @param $file 文件base64字节流
      * @return mixed
      */
     public function uploadImage($ePoiId, $imageName, $file)
@@ -173,7 +195,7 @@ class ProductService extends RpcService
      */
     public function batchProducts($ePoiId, $eDishCodes)
     {
-        return $this->client->call('post', 'waimai/dish/queryListByEdishCodes', ['ePoiId' => $ePoiId, 'eDishCodes' => $eDishCodes]);    
+        return $this->client->call('post', 'waimai/dish/queryListByEdishCodes', ['ePoiId' => $ePoiId, 'eDishCodes' => $eDishCodes]);
     }
 
 }

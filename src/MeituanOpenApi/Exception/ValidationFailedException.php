@@ -1,6 +1,6 @@
 <?php
 
-namespace ElemeOpenApi\Exception;
+namespace MeituanOpenApi\Exception;
 
 class ValidationFailedException extends ServiceException
 {
