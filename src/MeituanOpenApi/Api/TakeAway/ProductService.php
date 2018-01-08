@@ -146,6 +146,8 @@ class ProductService extends RpcService
 
     /** 
      * 上传菜品图片，返回图片id
+     * @param $ePoiId erp商家id
+     * @param $imageName 文件名
      * @param $image 文件base64字节流
      * @return mixed
      */
@@ -171,7 +173,7 @@ class ProductService extends RpcService
      */
     public function batchProducts($ePoiId, $eDishCodes)
     {
-        return $this->client->call('post', 'waimai/dish/queryListByEdishCodes', ['ePoiId' => $ePoiId, 'eDishCodes' => $eDishCodes])    
+        return $this->client->call('post', 'waimai/dish/queryListByEdishCodes', ['ePoiId' => $ePoiId, 'eDishCodes' => $eDishCodes]);    
     }
 
 }
