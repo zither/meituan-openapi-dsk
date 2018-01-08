@@ -8,85 +8,89 @@ use Exception;
 
 class OAuthClient
 {
-    private $client_id;
+    private $developerId;
+    private $businessId;   //1: 接入团购&闪惠业务 2: 接入外卖业务
     private $secret;
     private $token_url;
     private $authorize_url;
     private $log;
+    const  STORE_MAP_API = 'https://open-erp.meituan.com/storemap';
 
     public function __construct(Config $config)
     {
         $this->config = $config;
-        $this->client_id = $config->get_app_key();
+        $this->developerId = $config->developerId;
+        $this->businessId = $config->businessId;
         $this->secret = $config->get_app_secret();
         $this->token_url = $config->get_request_url() . "/token";
         $this->authorize_url = $config->get_request_url() . "/authorize";
         $this->log = $config->get_log();
     }
 
-    /**
-     * 客户端模式，获取token
-     * @return mixed
-     */
-    public function get_token_in_client_credentials()
-    {
-        $body = array(
-            "grant_type" => "client_credentials"
-        );
-        $response = $this->request($body);
-        return $response;
-    }
 
     /**
      * 生成授权url
-     * @param $state 状态码，通常是随机的UUID，授权成功后会原样返回，可以用于校验
-     * @param $scope 授权范围，默认情况下填写"all"
-     * @param $callback_url 回调地址
+     * @param $ePoiId 客户端唯一标识
+     * @param $ePoiName ERP商家门店名
      * @return string
      */
-    public function get_auth_url($state, $scope, $callback_url)
+    public function getAuthUrl($ePoiId, $ePoiName = '')
     {
-        $url = $this->authorize_url;
-        $response_type = "code";
-        $client_id = $this->client_id;
-        $callback = $callback_url;
-        return $url . "?response_type=" . $response_type . "&client_id=" . $client_id . "&state=" . $state . "&redirect_uri=" . $callback . "&scope=" . $scope;
+        //获取登录的客户ID
+        $query = [
+            'developerId' => $this->developerId,
+            'businessId' => $this->businessId,
+            'ePoiId' => $ePoiId,
+            'signKey' => $this->secret,
+        ];
+
+        //非必须
+        if (!empty($ePoiName)) {
+            $query['ePoiName'] = $ePoiName;
+        }    
+
+        $queryStr = http_build_query($query);
+        return $this->authorizeUri . '?' . $queryStr;
     }
 
-    /**
-     * 通过授权码获取token
-     * @param $code 授权码
-     * @param $callback_url 回调地址
-     * @return mixed
-     */
-    public function get_token_by_code($code, $callback_url)
-    {
-        $body = array(
-            "grant_type" => "authorization_code",
-            "code" => $code,
-            "redirect_uri" => $callback_url,
-            "client_id" => $this->client_id
-        );
-        $response = $this->request($body);
-        return $response;
-    }
 
     /**
-     * 通过refresh_token兑换新的token
-     * @param $refresh_token 刷新的token
-     * @param $scope 授权范围，默认情况下填写"all"
+     * 数字签名.
+     *
+     * @param $params
+     * @return string
+     */
+    public function signature(&$params)
+    {
+        $result = $this->secret;
+
+        ksort($params);
+
+        foreach ($params as $key => &$param) {
+            $param = is_array($param) ? json_encode($param) : $param;
+            $result .= $key.$param;
+        }
+
+        return strtolower(sha1($result));
+    }
+
+
+    /**
+     * 门店映射
+     * @param $ePoiId
      * @return mixed
      */
-    public function get_token_by_refresh_token($refresh_token, $scope)
+    public function storemap($ePoiId)
     {
-        $body = array(
-            "grant_type" => "refresh_token",
-            "refresh_token" => $refresh_token,
-            "scope" => $scope
-        );
-        $response = $this->request($body);
-        return $response;
+        $query = [
+            'developerId' => $this->developerId,
+            'businessId' => $this->businessId,
+            'ePoiId' => $ePoiId,
+            'signKey' => $this->secret,
+        ];
+        return $this->request(STORE_MAP_API, $query);    
     }
+
 
     private function get_headers()
     {
@@ -95,19 +99,16 @@ class OAuthClient
         );
     }
 
-    private function request($body)
+    private function request($url, $body)
     {
         if ($this->log != null) {
             $this->log->info("request data: " . json_encode($body));
         }
 
-        $ch = curl_init($this->token_url);
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $this->get_headers());
-        curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($body));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, "eleme-openapi-php-sdk");
-        curl_setopt($ch, CURLOPT_ENCODING, "gzip");
         $request_response = curl_exec($ch);
         if (curl_errno($ch)) {
             if ($this->log != null) {
@@ -128,5 +129,6 @@ class OAuthClient
         }
         return $response;
     }
+
 }
 

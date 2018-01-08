@@ -1,12 +1,15 @@
 <?php
 
-namespace MeituanOpenApi\Api;
+namespace MeituanOpenApi\Api\TakeAway;
+
+use MeituanOpenApi\Api\RpcService;
 
 /**
- * 商品服务
+ * 菜品服务
  */
 class ProductService extends RpcService
 {
+    const DISH_MAP_API = 'https://open-erp.meituan.com/waimai-dish-mapping';
 
     /**
      * 查询菜品分类
@@ -37,7 +40,7 @@ class ProductService extends RpcService
     }
 
     /**
-     * 根据ERP的门店id查询门店下的菜品基础信息【包含美团的菜品Id】
+     * 根据ERP的门店id查询门店下的菜品基础信息【包含美团的菜品Id】(7.2.2)
      * $return mixed
      */
     public function queryBaseListByEPoiId($ePoiId)
@@ -46,7 +49,7 @@ class ProductService extends RpcService
     }
 
     /**
-     * 根据ERP的门店id查询门店下的菜品【不包含美团的菜品Id】
+     * 根据ERP的门店id查询门店下的菜品【不包含美团的菜品Id】(7.2.4)
      * $return mixed
      */
     public function queryListByEPoiId($ePoiId, $offset, $limit)
@@ -56,7 +59,33 @@ class ProductService extends RpcService
 
 
     /**
-     * 建立菜品映射(美团商品与本地erp商品映射关系)
+     * 菜品映射链接
+     * @param $ePoiId
+     * @return string
+     */
+    public function getDishMapUrl($ePoiId)
+    {
+        return self::DISH_MAP_API . '?' . http_build_query([
+                'signKey'      => $this->client->app_key,
+                'appAuthToken' => $this->client->token,
+                'ePoiId'       => $ePoiId,
+            ]);
+    }
+
+
+    /**
+     * 重定向至菜品映射链接 (7.2.3 重定向跳转)
+     *
+     * @param $ePoiId
+     */
+    public function redirectDishMap($ePoiId)
+    {
+        header('Location:' . $this->getDishMapUrl($ePoiId));
+    }
+
+
+    /**
+     * 建立菜品映射(美团商品与本地erp商品映射关系) （7.2.3 openapi接入）
      * $return mixed
      */
     public function mapping($ePoiId, $dishMappings)
@@ -115,7 +144,8 @@ class ProductService extends RpcService
     }
 
 
-    /** 上传菜品图片，返回图片id
+    /** 
+     * 上传菜品图片，返回图片id
      * @param $image 文件base64字节流
      * @return mixed
      */
@@ -127,8 +157,21 @@ class ProductService extends RpcService
                 'imageName' => $imageName, 
                 'file' => $file
             ], 
-            ['contentType：multipart/form-data']
+            ['contentType：multipart/form-data'], false
         );
+    }
+
+
+    /**
+     * 批量查询菜品信息
+     * 根据eDishCode批量查询外卖菜品信息
+     * @param $ePoiId 
+     * @param $eDishCodes 
+     * @return mixed
+     */
+    public function batchProducts($ePoiId, $eDishCodes)
+    {
+        return $this->client->call('post', 'waimai/dish/queryListByEdishCodes', ['ePoiId' => $ePoiId, 'eDishCodes' => $eDishCodes])    
     }
 
 }

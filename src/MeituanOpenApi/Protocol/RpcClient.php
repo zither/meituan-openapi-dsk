@@ -37,12 +37,13 @@ class RpcClient
      * @param $method
      * @param $action
      * @param array $parameters
-     * @param array $parameters
+     * @param array $header
+     * @param $is_merge  
      * @return mixed
      * @throws BusinessException
      * @throws Exception
      */
-    public function call($method, $action, array $parameters, $header = [])
+    public function call($method, $action, $parameters, $header = [], $is_merge = true)
     {
         //url
         $url = $this->api_request_url . $action;
@@ -55,8 +56,10 @@ class RpcClient
             "version" => '1',
         );
 
-        //合并应用参数
-        $protocol = array_merge($protocol, $parameters);
+        //是否合并应用参数
+        if ($is_merge) {
+            $protocol = array_merge($protocol, $parameters);
+        } 
 
         //签名sign
         $protocol['sign'] = $this->generateSignature($protocol);
@@ -82,6 +85,9 @@ class RpcClient
     }
 
 
+    /**
+     * 数字签名
+     */
     private function generateSignature($protocol)
     {
         //键值字典排序
@@ -115,7 +121,7 @@ class RpcClient
         curl_setopt($ch, CURLOPT_POST, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
         $response = curl_exec($ch);
@@ -154,7 +160,7 @@ class RpcClient
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
         $response = curl_exec($ch);

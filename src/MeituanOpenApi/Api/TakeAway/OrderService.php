@@ -1,6 +1,8 @@
 <?php
 
-namespace MeituanOpenApi\Api;
+namespace MeituanOpenApi\Api\TakeAway;
+
+use MeituanOpenApi\Api\RpcService;
 
 /**
  * 订单服务
@@ -110,7 +112,7 @@ class OrderService extends RpcService
      * @param $tipAmount   小费
      * @return mixed
      */
-    public function updateCrowdsourcingDispatchTip($orderId, $tipAmount)
+    public function addCrowdsourcingDispatchTip($orderId, $tipAmount)
     {
         return $this->client->call('post', 'waimai/order/updateZbDispatchTip', ['orderId' => $orderId, 'tipAmount' => $tipAmount]);
     }
@@ -122,7 +124,7 @@ class OrderService extends RpcService
      * @param $tipAmount   小费，不加小费输入0.0
      * @return mixed
      */
-    public function confirmCrowdsourcingDispatchTip($orderId, $tipAmount)
+    public function confirmCrowdsourcingDispatch($orderId, $tipAmount)
     {
         return $this->client->call('post', 'waimai/order/confirmZbDispatch', ['orderId' => $orderId, 'tipAmount' => $tipAmount]);
     }
@@ -167,7 +169,7 @@ class OrderService extends RpcService
      * @param $reason     原因
      * @return mixed
      */
-    public function rejectRefund($orderId)
+    public function rejectRefund($orderId, $reason)
     {
         return $this->client->call('post', 'waimai/order/rejectRefund', ['orderId' => $orderId, 'reason'=>$reason]);
     }

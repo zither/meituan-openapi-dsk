@@ -1,11 +1,13 @@
 <?php
 
-namespace MeituanOpenApi\Api;
+namespace MeituanOpenApi\Api\TakeAway;
+
+use MeituanOpenApi\Api\RpcService;
 
 /**
- * 店铺服务
+ * 门店服务
  */
-class ShopService extends RpcService
+class PoiService extends RpcService
 {
 
     /** 门店置营业
@@ -42,7 +44,7 @@ class ShopService extends RpcService
      * @param $ePoiIds 门店Ids
      * @return mixed
      */
-    public function queryPoiInfo($ePoiIds)
+    public function queryPoiInfos($ePoiIds)
     {
         return $this->client->call('get','waimai/poi/queryPoiInfo', ['ePoiIds' => $ePoiIds]);
     }
