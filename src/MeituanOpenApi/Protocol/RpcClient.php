@@ -61,7 +61,7 @@ class RpcClient
 
         //系统参数
         $protocol = array(
-            "appAuthToken" => $this->token->access_token,
+            "appAuthToken" => $this->token,
             "charset" => 'UTF-8',
             "timestamp" => time(),
             "version" => '1',
