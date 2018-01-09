@@ -91,6 +91,11 @@ class RpcClient
             if (isset($response->error_type) && isset($response->message)) {
                 throw new BusinessException($response->error_type . ' : ' . $response->message);
             }
+
+            if (isset($response->msg)) {
+                throw new BusinessException($response->code . ' : ' . $response->msg);
+            }
+
         }
         return $response->data;
     }
