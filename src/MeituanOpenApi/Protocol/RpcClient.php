@@ -86,17 +86,19 @@ class RpcClient
             throw new Exception("invalid response.");
         }
 
-        //抛出错误信息
-        if ($response->code != 0) {
-            if (isset($response->error_type) && isset($response->message)) {
-                throw new BusinessException($response->error_type . ' : ' . $response->message);
-            }
 
-            if (isset($response->msg)) {
-                throw new BusinessException($response->code . ' : ' . $response->msg);
+        //抛出错误信息
+        if (isset($response->error)) {
+            if (isset($response->error->error_type) && isset($response->error->message)) {
+                throw new BusinessException($response->error->error_type . ' : ' . $response->error->message);
             }
 
         }
+
+        if (isset($response->msg)) {
+            throw new BusinessException($response->code . ' : ' . $response->msg);
+        }
+
         return $response->data;
     }
 
