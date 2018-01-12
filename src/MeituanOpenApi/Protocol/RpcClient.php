@@ -1,7 +1,6 @@
 <?php
 
 namespace MeituanOpenApi\Protocol;
-
 use MeituanOpenApi\Config\Config;
 use MeituanOpenApi\Exception\BusinessException;
 use Exception;
