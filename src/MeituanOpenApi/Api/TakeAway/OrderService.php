@@ -157,7 +157,7 @@ class OrderService extends RpcService
      * @param $reason     原因
      * @return mixed
      */
-    public function agreeRefund($orderId)
+    public function agreeRefund($orderId, $reason)
     {
         return $this->client->call('post', 'waimai/order/agreeRefund', ['orderId' => $orderId, 'reason'=>$reason]);
     }

@@ -51,14 +51,14 @@ class PoiService extends RpcService
 
 
     /** 查询门店评价信息
-     * @param $ePoiIds 门店Ids
+     * @param $ePoiId 门店Id
      * @param $startTime 
      * @param $endTime 
      * @param $offset 
      * @param $limit 
      * @return mixed
      */
-    public function queryReviewList($ePoiIds, $startTime, $endTime, $offset, $limit)
+    public function queryReviewList($ePoiId, $startTime, $endTime, $offset, $limit)
     {
         return $this->client->call('get', 'waimai/poi/queryReviewList', [
                 'ePoiId' => $ePoiId,
