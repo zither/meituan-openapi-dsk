@@ -8,7 +8,6 @@ use Exception;
 
 class RpcClient
 {
-
     private $signKey;
     private $api_request_url;
     private $token;
