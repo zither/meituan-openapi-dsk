@@ -133,6 +133,26 @@ class RpcClient
         return $params;
     }
 
+    /**
+     * http_build_query 简单实现
+     * @param array $params
+     * @param bool $urlencode
+     * @return string
+     * @see http://php.net/manual/en/function.http-build-query.php#60523
+     */
+    protected function buildQuery($params, $urlencode = true)
+    {
+        $queryParams = [];
+        foreach ($params as $key => $value) {
+            if ($urlencode) {
+                $key = urlencode($key);
+                $value = urlencode($value);
+            }
+            $queryParams[] = sprintf('%s=%s', $key, $value);
+        }
+        return implode('&', $queryParams);
+    }
+
 
     /**
      * get请求
