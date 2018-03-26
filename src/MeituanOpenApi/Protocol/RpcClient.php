@@ -47,12 +47,11 @@ class RpcClient
      * @param $action
      * @param array $parameters
      * @param array $header
-     * @param $is_merge
      * @return mixed
      * @throws BusinessException
      * @throws Exception
      */
-    public function call($method, $action, $parameters = [], $header = [], $is_merge = true)
+    public function call($method, $action, $parameters = [], $header = [])
     {
         //url
         $url = $this->api_request_url . $action;
@@ -65,17 +64,18 @@ class RpcClient
             "version" => '1',
         );
 
-        //是否合并应用参数
-        if ($is_merge) {
-            $protocol = array_merge($protocol, $parameters);
-        }
-
         //签名sign
-        $protocol['sign'] = $this->generateSignature($protocol);
-        if ($method == 'get') { //get
-            $result = $this->get($url, $protocol, $header);
-        } else { //post
-            $result = $this->post($url, $protocol, $header);
+        $signParams = array_merge($protocol, $parameters);
+        $protocol['sign'] = $signParams['sign'] = $this->generateSignature($signParams);
+
+        //系统级参数在 POST 请求中也需要以 URL 参数的方式传递（http://developer.meituan.com/openapi#3.3）
+        $queryParams = $method == 'get' ? $signParams : $protocol;
+        $url = sprintf('%s?%s', $url, $this->buildQuery($queryParams));
+
+        if ($method == 'get') {
+            $result = $this->get($url, $header);
+        } else {
+            $result = $this->post($url, $parameters, $header);
         }
 
         $response = json_decode($result, false, 512, JSON_BIGINT_AS_STRING);
@@ -157,23 +157,14 @@ class RpcClient
     /**
      * get请求
      * @param $url
-     * @param $data
      * @param $header
      * @return mixed
      * @throws Exception
      */
-    private function get($url, $data, $header)
+    private function get($url, $header)
     {
-        $log = $this->log;
-        if ($log != null) {
-            $log->info("request data: " . json_encode($data));
-        }
-
-        //头部设置    
+        //头部设置
         $header = !empty($header) ? $header : array("Content-type: x-www-form-urlencoded");
-
-        //url拼接参数, 生成urlencode之后的请求字符串 (请求参数中有中文时，中文需要经过url编码)
-        $url = $url. '?' . http_build_query($data);
 
         //发起curl请求
         $ch = curl_init($url);
