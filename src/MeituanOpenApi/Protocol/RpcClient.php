@@ -186,6 +186,7 @@ class RpcClient
 
         $response = curl_exec($ch);
 
+        $log = $this->log;
         //错误信息    
         if (curl_errno($ch)) {
             if ($log != null) {
